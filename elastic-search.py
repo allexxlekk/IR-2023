@@ -34,7 +34,7 @@ def add_data(client, index_name="books"):
     and adds them to the specified index."""
 
     df = pd.read_csv("BX-Books.csv")
-    
+
     for i, r in df.iterrows():
 
         # Creates document for each row and adds it to index.
