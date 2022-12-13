@@ -118,7 +118,7 @@ def print_results(final_results):
     print(f"\n{len(final_results)} Results: \n")
     for res in final_results:
         print(
-            f' Title: {res["title"]}, Author: {res["author"]}\n Matching rank: {res["rank"]}'
+            f' Title: {res["title"]}, Author: {res["author"]}, Year: {res["year_of_publication"]}\n Matching rank: {res["rank"]}'
         )
         print("--------------------------------------------------------------------")
 
