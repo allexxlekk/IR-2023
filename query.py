@@ -4,6 +4,12 @@ from elasticsearch import Elasticsearch
 import pandas as pd
 from sys import argv
 
+# Coefficients values for the weighted average.
+RATING_COEFF = 0.5
+RANK_COEFF = 0.5
+
+# TODO refactor the code
+
 
 def getArgs():
     """Gets the values of the arguments given in the command line."""
@@ -20,7 +26,7 @@ def es_connect():
     if client.ping():
         print("Successfully connected to Elasticsearch cluster.")
         print(
-            f" Cluster Name: {client.info().body['cluster_name']}\nCluster UUID: {client.info().body['cluster_uuid']}"
+            f" Cluster Name: {client.info().body['cluster_name']}\n Cluster UUID: {client.info().body['cluster_uuid']}"
         )
     else:
         print("Could not connect to Elasticsearch cluster.")
@@ -28,23 +34,22 @@ def es_connect():
     return client
 
 
-def es_search(es_client, user_query, user_id=None):
+def es_search(es_client, user_query):
     """Queries Elastisearch client based on user input."""
-    query_body = {"query": {"bool": {"must": {"match": {"book_title": user_query}}}}}
-    # TODO  make better query
-    response = es_client.search(index="books", body=query_body, size=10)
-    # TODO combine user rating
-    # TODO create metric with weighted average perhaps
-    # TODO refactor the code
+    query_body = {"bool": {"should": {"match": {"book_title": user_query}}}}
+    response = es_client.search(index="books", query=query_body, size=1000)
+    results = []
     for h in response["hits"]["hits"]:
         result = {
-            "Title": h["_source"]["book_title"],
-            "Author": h["_source"]["book_author"],
-            "Year of Publication": h["_source"]["year_of_publication"],
-            "Ranking Score": h["_score"],
+            "isbn": h["_source"]["isbn"],
+            "title": h["_source"]["book_title"],
+            "author": h["_source"]["book_author"],
+            "year_of_publication": h["_source"]["year_of_publication"],
+            "rank": float(h["_score"]),
         }
+        results.append(result)
 
-        print(result)
+    return results
 
 
 def getRatings(user_id):
@@ -54,14 +59,62 @@ def getRatings(user_id):
 
     user_ratings = {}  # Create dict isbn : user-rating
     for i, r in result.iterrows():
-        user_ratings[r["isbn"]] = r["rating"]
+        user_ratings[r["isbn"]] = float(r["rating"])
 
     return user_ratings
 
 
+def calibrateResults(elastic_results, user_ratings):
+    """Combine user ratings and elastic search response into the final list."""
+    # Final result calculated using weighted average.
+    for r in elastic_results:
+        rating = float(user_ratings[r["isbn"]]) if r["isbn"] in user_ratings else None
+        if rating != None:
+            # 0 rated books go to the bottom of the result list.
+            if rating == 0:
+                r["rank"] = 0
+            else:
+                r["rank"] = rating * RATING_COEFF + r["rank"] * RANK_COEFF
+        else:
+            # calculate rank only based on the Elasticsearch result.
+            r["rank"] = r["rank"] * RANK_COEFF
+
+    return elastic_results
+
+
+def getResults(es_client):
+    """Query Elasticsearch and return final results."""
+    # Get query and user id from the command line.
+    user_query, user_id = getArgs()
+    # Query elastic search.
+    elastic_results = es_search(es_client, user_query)
+
+    # Recalibrate elastic search results based on users ratings.
+    if user_id != None:
+        user_ratings = getRatings(user_id)
+        elastic_results = calibrateResults(elastic_results, user_ratings)
+
+    return elastic_results
+
+
+def printResults(results):
+    """Prints the final result in a readable format"""
+    # Sort the results based on rank if user id was provided.
+    if len(argv) == 3:
+        results = sorted(results, key=lambda x: x["rank"], reverse=True)
+        
+    # Keep 10% of the resutls
+    results = results[:int(len(results)/10):]
+    
+    print(f"\n{len(results)} Results: \n")
+    for r in results:
+        print(
+            f' Title: {r["title"]}, Author: {r["author"]}\n Matching rank: {r["rank"]}'
+        )
+        print("--------------------------------------------------------------------")
+
+
 if __name__ == "__main__":
-    # es = es_connect()
-    # es_search(es, "mythology")
-    # getRatings(3)
-    query, ID = getArgs()
-    print(getRatings(ID))
+    es = es_connect()
+    results = getResults(es)
+    printResults(results)
