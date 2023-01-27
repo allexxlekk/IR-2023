@@ -55,7 +55,6 @@ def showClusters(data_with_clusters):
     )
     plt.xlabel("USER AGE")
     plt.ylabel("USER COUNTRY")
-    plt.xlim(18, 100)
     plt.show()
 
 
@@ -81,18 +80,73 @@ if __name__ == "__main__":
     # dfnew.to_csv("test.csv", index=False)
 
     # Load clustered users
-    df_users = pd.read_csv("test.csv")
+    df_users = pd.read_csv("BX-Users-Clustered.csv")
+    # Load user ratings
+    df_ratings = pd.read_csv("BX-Book-Ratings-clean.csv")
 
+    # A list holding each dictionary of book average rating per cluster => [{}, {}, ... ,{}]
+    cluster_ratings = []
     for i in range(0, CLUSTERS):
 
-        print("CLUSTER : ", i)
-
-        books_cluster =  {} #{isbn : accumlative_rating, users_rated } => {isbn: avg_rating}
+        # { isbn : {accumlative_rating : 0, users_rated : 0} } => {isbn: avg_rating}
+        books_cluster = {}
         # Get users dataframe of a specific cluster
         cluster_users = df_users[df_users["cluster"] == i]
 
-        for _, row in cluster_users.iterrows():
-            
+        for j, row in cluster_users.iterrows():
+
             # User id
-            user_id = row['uid']
-            print("----------")
+            user_id = row["uid"]
+            # Consider 0 ratings as missing. Examine only valid ratings
+            user_ratings = df_ratings[
+                (df_ratings["uid"] == user_id) & (df_ratings["rating"] > 0)
+            ]
+
+            # Update book dictionary for cluster per user's ratings
+            if not user_ratings.empty:
+                
+                print(f"Cluster {i},record {j}")
+                
+                for k, row in user_ratings.iterrows():
+
+                    book_isbn = str(row["isbn"])
+                    book_rating = float(row["rating"])
+
+                    if book_isbn not in books_cluster.keys():
+                        books_cluster[book_isbn] = {
+                            "acc_rating": book_rating,
+                            "users_rated": 1,
+                        }
+                    else:
+                        books_cluster[book_isbn]["acc_rating"] += book_rating
+                        books_cluster[book_isbn]["users_rated"] += 1
+                        
+        # Create new dictionary containg the average rating for this cluster
+        books_cluster_average = {}
+        for isbn,values in books_cluster.items():
+            total_sum = float(values['acc_rating'])
+            no_ratings = float(values['users_rated'])
+            
+            books_cluster_average[isbn] = int(total_sum/ no_ratings)
+            
+        cluster_ratings.append(books_cluster_average)
+        
+    for i,row in df_ratings.iterrows():
+        current_uid = row["uid"]
+        current_rating = row["rating"]
+        current_isbn = row["isbn"]
+        user_cluster = int(df_users[df_users["uid"] == current_uid].head(1)['cluster'])
+        print(f"User ID: {current_uid} , Cluster: {user_cluster}")
+        if current_rating == 0:
+            # df.at[i, 'country_encoding'] = country_enc
+            
+            # Access book ratings of the user's cluster
+            if current_isbn in cluster_ratings[user_cluster].keys():
+                df_ratings.at[i, 'rating'] = int(cluster_ratings[user_cluster][current_isbn])
+    
+    df_ratings.to_csv('BX-Book-Ratings-Clustered.csv', index=False)
+            
+        
+        
+
+    
