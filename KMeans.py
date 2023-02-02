@@ -72,13 +72,6 @@ def clustering(filename):
 
 if __name__ == "__main__":
 
-    # Save clustered data to csv
-
-    # showClusters(data_with_clusters)
-    # dfnew = pd.read_csv("test2.csv")
-    # dfnew["Cluster"] = id_clusters
-    # dfnew.to_csv("test.csv", index=False)
-
     # Load clustered users
     df_users = pd.read_csv("BX-Users-Clustered.csv")
     # Load user ratings
@@ -130,7 +123,31 @@ if __name__ == "__main__":
             books_cluster_average[isbn] = int(total_sum/ no_ratings)
             
         cluster_ratings.append(books_cluster_average)
+
+
+
+    # Create cluster Specific csv files
+    df_books = pd.read_csv('BX-Books.csv')
+    for i, d in enumerate(cluster_ratings):
+        print("Cluster: ", i)
+        isbn_list = []
+        summary_list = []
+        rating_list = []
+        for key, value in d.items():
+            book_isbn = key
+            book_summary = df_books[df_books["isbn"] == key]['summary'].iloc[0]
+            book_rating = int(value)
+            
+            isbn_list.append(book_isbn)
+            summary_list.append(book_summary)
+            rating_list.append(book_rating)
+            
+        clusterdf = pd.DataFrame({"isbn" : isbn_list, "summary": book_summary, "rating" : rating_list})
         
+        clusterdf.to_csv(f'cluster{i+1}.csv', index= False) 
+    
+    
+    # Update new user ratings from the cluster's average
     for i,row in df_ratings.iterrows():
         current_uid = row["uid"]
         current_rating = row["rating"]
@@ -138,8 +155,6 @@ if __name__ == "__main__":
         user_cluster = int(df_users[df_users["uid"] == current_uid].head(1)['cluster'])
         print(f"User ID: {current_uid} , Cluster: {user_cluster}")
         if current_rating == 0:
-            # df.at[i, 'country_encoding'] = country_enc
-            
             # Access book ratings of the user's cluster
             if current_isbn in cluster_ratings[user_cluster].keys():
                 df_ratings.at[i, 'rating'] = int(cluster_ratings[user_cluster][current_isbn])
