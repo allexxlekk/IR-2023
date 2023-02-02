@@ -161,25 +161,95 @@ import random
 #     tokens_without_sw = [word for word in text_tokens if not word in stopwords.words()]
 #     summary = (" ").join(tokens_without_sw)
 #     df_books.at[i, "summary"] = summary
-    
+
 # df_books.to_csv('test.csv', index=False)
-    
+
 # df_books = pd.read_csv('BX-Books-clean.csv')
 # with open('vocabulary.dat', 'w') as f:
 #     vocab = []
 #     for i, row in df_books.iterrows():
-#         summary = row['summary'].lower()
-#         df_books.at[i, "summary"] = summary
-#         print(row['isbn'])
+#         print(i)
+#         summary = row['summary']
 #         summary_wordlist = summary.split(' ')
 #         for word in summary_wordlist:
 #             if word not in vocab:
 #                 vocab.append(word)
 #     print('Writing to file, please wait....')
 #     for word in vocab:
-        
+
 #         f.write(word+'\n')
 
 # df_books.to_csv('test.csv', index = False)
 
+# df_books = pd.read_csv('BX-Books-clean.csv')
+# max_l = 0
+# for i,row in df_books.iterrows():
+#     print(i)
+#     summary = row['summary']
+#     summary_list = summary.split(' ')
+#     if len(summary_list) > max_l:
+#         max_l = len(summary_list)
+
+# print(max_l)
+
+
+# # df_reviews = pd.read_csv('BX-Book-Ratings.csv')
+# # isbn_list = []
+# # rating_list = []
+# # for i,row in df_reviews.iterrows():
+# #     print(i)
+# #     if row['rating'] != 0:
+# #         isbn_list.append(row['isbn'])
+# #         rating_list.append(int(row['rating']))
+# # new_df = pd.DataFrame({"isbn": isbn_list, "rating" : rating_list})
+# # new_df.to_csv('reviews-train.csv', index=False)
+# df_ratings = pd.read_csv("BX-Book-Ratings-clean.csv")
+# user_ratings = df_ratings[df_ratings["rating"] > 0]
+# books_cluster = {}
+# for k, row in user_ratings.iterrows():
+#     print(k)
+#     book_isbn = str(row["isbn"])
+#     book_isbn = book_isbn.zfill(10)
+#     book_rating = float(row["rating"])
+
+#     if book_isbn not in books_cluster.keys():
+#         books_cluster[book_isbn] = {
+#             "acc_rating": book_rating,
+#             "users_rated": 1,
+#         }
+#     else:
+#         books_cluster[book_isbn]["acc_rating"] += book_rating
+#         books_cluster[book_isbn]["users_rated"] += 1
+        
+# books_cluster_average = {}
+# for isbn,values in books_cluster.items():
+#     total_sum = float(values['acc_rating'])
+#     no_ratings = float(values['users_rated'])
     
+#     books_cluster_average[isbn] = int(total_sum/ no_ratings)
+
+
+# for key, value in books_cluster_average.items():
+#     print(key, value)
+
+# df_books = pd.read_csv("BX-Books-clean.csv")
+# isbn_list = []
+# summary_list = []
+# rating_list = []
+# i = 0
+# for key, value in books_cluster_average.items():
+#     i += 1
+#     print(i)
+#     book_isbn = str(key)
+#     book_summary = df_books[df_books["isbn"] == key]["summary"].values[0]
+#     book_rating = int(value)
+
+#     isbn_list.append(book_isbn)
+#     summary_list.append(book_summary)
+#     rating_list.append(book_rating)
+
+# clusterdf = pd.DataFrame(
+#     {"isbn": isbn_list, "summary": summary_list, "rating": rating_list}
+# )
+
+# clusterdf.to_csv("test.csv", index=False)

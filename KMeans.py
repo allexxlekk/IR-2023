@@ -127,7 +127,7 @@ if __name__ == "__main__":
 
 
     # Create cluster Specific csv files
-    df_books = pd.read_csv('BX-Books.csv')
+    df_books = pd.read_csv('BX-Books-clean.csv')
     for i, d in enumerate(cluster_ratings):
         print("Cluster: ", i)
         isbn_list = []
@@ -142,7 +142,7 @@ if __name__ == "__main__":
             summary_list.append(book_summary)
             rating_list.append(book_rating)
             
-        clusterdf = pd.DataFrame({"isbn" : isbn_list, "summary": book_summary, "rating" : rating_list})
+        clusterdf = pd.DataFrame({"isbn" : isbn_list, "summary": summary_list, "rating" : rating_list})
         
         clusterdf.to_csv(f'cluster{i+1}.csv', index= False) 
     
