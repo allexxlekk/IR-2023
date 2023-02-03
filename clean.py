@@ -253,3 +253,28 @@ import random
 # )
 
 # clusterdf.to_csv("test.csv", index=False)
+
+# df_reviews = pd.read_csv('BX-Book-Ratings-Clustered.csv')
+# df_reviews = df_reviews[df_reviews['rating'] == 0]
+
+# df_users = pd.read_csv('BX-Users-Clustered.csv')
+
+# df_merged = pd.merge(df_reviews, df_users, on="uid")
+# df_merged = df_merged[['uid', 'isbn', 'cluster']]
+# df_merged.to_csv('test.csv', index = False)
+
+# df_test = pd.read_csv('test.csv')
+
+# df_books = pd.read_csv('BX-Books-clean.csv')
+
+# df_merged = pd.merge(df_test, df_books, on="isbn")
+# df_merged = df_merged[['uid', 'isbn', 'cluster', 'summary']]
+# df_merged.to_csv('test.csv', index = False)
+
+df_ratings = pd.read_csv('BX-Book-Ratings-Clustered.csv')
+number = [1,2,3,3,4,4,5,5,6,6,6,7,7,7,7,8,8,8,9,9,9,10,10]
+for i,row in df_ratings.iterrows():
+    print(i)
+    if row['rating'] == 0:
+        df_ratings.at[i, 'rating'] = random.choice(number)
+df_ratings.to_csv('test.csv', index = False)

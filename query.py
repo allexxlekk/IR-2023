@@ -61,7 +61,7 @@ def es_search(es_client, user_query):
 def get_ratings(user_id):
     """Get all the ratings of a certain user."""
     # Parse the data file to get ratings
-    df = pd.read_csv("BX-Book-Ratings.csv")
+    df = pd.read_csv("BX-Book-Ratings-Final.csv")
     result = df[df["uid"] == user_id][["uid", "isbn", "rating"]]
 
     user_ratings = {}  # Create dict isbn : user-rating
